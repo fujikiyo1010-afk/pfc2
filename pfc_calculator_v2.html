@@ -28,7 +28,10 @@
     .lead-break{white-space:pre-line;}
     .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);margin-bottom:16px}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type=number], select{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:16px;margin-bottom:16px;outline:none;transition:border-color .2s, box-shadow .2s}
+    input[type=number], select{
+      width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;
+      font-size:16px;margin-bottom:16px;outline:none;transition:border-color .2s, box-shadow .2s
+    }
     input[type=number]:focus, select:focus{border-color:var(--accent-light);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
     .error{border-color:var(--danger)!important;box-shadow:0 0 0 3px rgba(239,68,68,.15)!important}
     button{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,#2563eb,#3b82f6);color:white;font-size:16px;font-weight:600;cursor:pointer;transition:0.2s}
@@ -55,7 +58,7 @@
   </style>
 </head>
 <body>
-  <!-- 画像の実寸に近いwidth/heightを指定してCLS低減 -->
+  <!-- 画像の実寸に近いwidth/heightを指定してCLS低減（1枚だけ残しています） -->
   <img src="1.png" alt="PFC Calculator ヘッダー画像"
        width="900" height="300"
        style="width:100%;max-width:900px;display:block;margin:16px auto;border-radius:12px;"
@@ -215,8 +218,7 @@ PFCを自動で計算します。</p>
       if (c_kcal < 0){
         c_kcal = 0;
         // 注意：設定カロリーがP+Fを下回る
-        showWarning('設定カロリーが「P（たんぱく質）+ F（脂質）」より少ないため、糖質（C）が 0 になっています。' +
-                    ' たんぱく質のg/kgや脂質比率、総カロリーを見直してください。');
+        showWarning('設定カロリーが「P（たんぱく質）+ F（脂質）」より少ないため、糖質（C）が 0 になっています。たんぱく質のg/kgや脂質比率、総カロリーを見直してください。');
         cal.classList.add('error');
       }
       const c_g = c_kcal / 4;
