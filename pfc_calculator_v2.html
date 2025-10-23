@@ -15,6 +15,8 @@
       --p-color:#d0ebff; /* たんぱく質薄水色 */
       --f-color:#ffe5d0; /* 脂質薄オレンジ */
       --c-color:#d0f5e0; /* 糖質ミントグリーン */
+      --danger:#ef4444;
+      --warn-bg:#fff7ed;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:'Segoe UI',Roboto,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;background:var(--bg);color:var(--text)}
@@ -26,7 +28,12 @@
     .lead-break{white-space:pre-line;}
     .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);margin-bottom:16px}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type=number], select{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:16px;margin-bottom:16px}
+    input[type=number], select{
+      width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;
+      font-size:16px;margin-bottom:16px;outline:none;transition:border-color .2s, box-shadow .2s
+    }
+    input[type=number]:focus, select:focus{border-color:var(--accent-light);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+    .error{border-color:var(--danger)!important;box-shadow:0 0 0 3px rgba(239,68,68,.15)!important}
     button{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,#2563eb,#3b82f6);color:white;font-size:16px;font-weight:600;cursor:pointer;transition:0.2s}
     button:hover{opacity:0.9}
     .result{display:flex;flex-direction:column;gap:12px}
@@ -39,6 +46,8 @@
     .dot.p{background:#2563eb}
     .dot.f{background:#f97316}
     .dot.c{background:#10b981}
+    .note{display:none;margin-top:4px;font-size:12px;color:#7c2d12;background:var(--warn-bg);border:1px solid #fed7aa;padding:10px;border-radius:10px}
+    .note.show{display:block}
     footer{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
     table{width:100%;border-collapse:collapse;margin-top:10px;margin-bottom:20px}
     th,td{border:1px solid #ccc;padding:6px;text-align:center;font-size:14px}
@@ -49,7 +58,11 @@
   </style>
 </head>
 <body>
-  <img src="1.png" alt="PFC Calculator ヘッダー画像" style="width:100%;max-width:900px;display:block;margin:16px auto;border-radius:12px;" loading="lazy" decoding="async">
+  <!-- 画像の実寸に近いwidth/heightを指定してCLS低減（1枚だけ残しています） -->
+  <img src="1.png" alt="PFC Calculator ヘッダー画像"
+       width="900" height="300"
+       style="width:100%;max-width:900px;display:block;margin:16px auto;border-radius:12px;"
+       loading="lazy" decoding="async">
 
   <div class="wrap">
     <header>
@@ -58,31 +71,41 @@
 PFCを自動で計算します。</p>
     </header>
 
-    <div class="card">
-      <label>体重（kg）</label>
-      <input id="weight" type="number" min="1" step="0.1" value="50" />
+    <div class="card" aria-describedby="inputHelp">
+      <label for="weight">体重（kg）</label>
+      <input id="weight" type="number" min="30" step="0.1" value="60" inputmode="decimal" aria-describedby="inputHelp" />
 
-      <label>摂取カロリー（kcal）</label>
-      <input id="cal" type="number" min="1" step="10" value="2000" />
+      <label for="cal">摂取カロリー（kcal）</label>
+      <input id="cal" type="number" min="800" step="10" value="2000" inputmode="numeric" aria-describedby="inputHelp" />
 
-      <label>脂質比率</label>
-      <select id="fatRate">
+      <label for="fatRate">脂質比率（%）</label>
+      <select id="fatRate" aria-label="脂質比率">
         <option value="20">20%</option>
-        <option value="25">25%</option>
+        <option value="25" selected>25%</option>
         <option value="30">30%</option>
       </select>
 
-      <button id="calcBtn">計算する</button>
+      <label for="ppk">たんぱく質（g/kg）</label>
+      <select id="ppk" aria-label="体重1kgあたりのたんぱく質量">
+        <option value="1.6">1.6</option>
+        <option value="2.0" selected>2.0</option>
+        <option value="2.2">2.2</option>
+      </select>
+
+      <div id="inputHelp" class="small">※ 体重・摂取カロリー・脂質比率・g/kg を変更すると自動で再計算されます。</div>
+      <button id="calcBtn" type="button" aria-label="計算を実行">計算する</button>
     </div>
 
     <div class="card result" id="resultCard" aria-live="polite">
-      <div class="legend">
+      <div class="legend" aria-hidden="true">
         <span><span class="dot p"></span>たんぱく質（P）</span>
         <span><span class="dot f"></span>脂質（F）</span>
         <span><span class="dot c"></span>糖質（C）</span>
       </div>
 
-      <div class="pill">
+      <div id="warn" class="note" role="status" aria-atomic="true"></div>
+
+      <div class="pill" aria-label="たんぱく質の計算結果">
         <div>
           <div class="small">たんぱく質（P）</div>
           <b id="pGram" class="p-bg">- g</b>
@@ -94,7 +117,7 @@ PFCを自動で計算します。</p>
         </div>
       </div>
 
-      <div class="pill">
+      <div class="pill" aria-label="脂質の計算結果">
         <div>
           <div class="small">脂質（F）</div>
           <b id="fGram" class="f-bg">- g</b>
@@ -106,7 +129,7 @@ PFCを自動で計算します。</p>
         </div>
       </div>
 
-      <div class="pill">
+      <div class="pill" aria-label="糖質の計算結果">
         <div>
           <div class="small">糖質（C）</div>
           <b id="cGram" class="c-bg">- g</b>
@@ -126,7 +149,7 @@ PFCを自動で計算します。</p>
 
     <h2>例（カーボサイクル1日の糖質量）</h2>
     <div class="card">
-      <table>
+      <table aria-label="カーボサイクル例">
         <tr><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th><th>合計</th></tr>
         <tr><td>196</td><td>196</td><td>196</td><td>490</td><td>196</td><td>196</td><td>490</td><td>1960</td></tr>
         <tr><td>153</td><td>153</td><td>153</td><td>153</td><td>153</td><td>153</td><td>613</td><td>1531</td></tr>
@@ -139,59 +162,96 @@ PFCを自動で計算します。</p>
 
   <script>
     const $ = id => document.getElementById(id);
-    function fmt(n, d=1){ return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toString(); }
+    // 桁区切り（整数用）
+    const num = n => Math.round(n).toLocaleString('ja-JP');
+    // 小数表示（用途に応じて桁数調整）
+    function fmt(n, d=1){
+      const r = Math.round(n*Math.pow(10,d))/Math.pow(10,d);
+      return r.toLocaleString('ja-JP', { minimumFractionDigits:d, maximumFractionDigits:d });
+    }
 
     const weight = $('weight');
     const cal = $('cal');
     const fatRate = $('fatRate');
+    const ppk = $('ppk');
     const calcBtn = $('calcBtn');
+    const warn = $('warn');
 
     const pGram = $('pGram'); const pKcal = $('pKcal'); const pPct = $('pPct');
     const fGram = $('fGram'); const fKcal = $('fKcal'); const fPct = $('fPct');
     const cGram = $('cGram'); const cKcal = $('cKcal'); const cPct = $('cPct');
     const totalCal = $('totalCal');
 
-    function calculate(){
-      const w = parseFloat(weight.value) || 0;
-      const C = parseFloat(cal.value) || 0;
-      const fPercent = parseFloat(fatRate.value) || 20;
-      const pPerKg = 2; // 固定
+    function clearWarnings(){
+      warn.classList.remove('show');
+      warn.textContent = '';
+      cal.classList.remove('error');
+    }
 
-      const p_g = w * pPerKg;
+    function showWarning(message){
+      warn.textContent = message;
+      warn.classList.add('show');
+    }
+
+    function calculate(){
+      clearWarnings();
+
+      const w = Math.max(parseFloat(weight.value) || 0, parseFloat(weight.min) || 0);
+      const C_input = parseFloat(cal.value) || 0;
+      const C_min = parseFloat(cal.min) || 0;
+      const C = Math.max(C_input, C_min);
+      if (C !== C_input) { cal.value = C; } // 最小値未満を矯正
+
+      const fPercent = parseFloat(fatRate.value) || 20;
+      const pPerKg = parseFloat(ppk.value) || 2;
+
+      // P
+      const p_g = Math.max(w * pPerKg, 0);
       const p_kcal = p_g * 4;
 
-      const f_kcal = C * (fPercent/100);
+      // F
+      const f_kcal = Math.max(C * (fPercent/100), 0);
       const f_g = f_kcal / 9;
 
+      // C（残り）
       let c_kcal = C - (p_kcal + f_kcal);
-      if(c_kcal < 0){ c_kcal = 0; }
+      if (c_kcal < 0){
+        c_kcal = 0;
+        // 注意：設定カロリーがP+Fを下回る
+        showWarning('設定カロリーが「P（たんぱく質）+ F（脂質）」より少ないため、糖質（C）が 0 になっています。たんぱく質のg/kgや脂質比率、総カロリーを見直してください。');
+        cal.classList.add('error');
+      }
       const c_g = c_kcal / 4;
 
+      // 割合
       const p_pct = C ? (p_kcal / C * 100) : 0;
       const f_pct = C ? (f_kcal / C * 100) : 0;
       const c_pct = C ? (c_kcal / C * 100) : 0;
 
+      // 反映（gは1桁小数、kcalは3桁区切り整数、％は1桁小数）
       pGram.textContent = fmt(p_g, 1) + ' g';
-      pKcal.textContent = fmt(p_kcal, 0) + ' kcal';
+      pKcal.textContent = num(p_kcal) + ' kcal';
       pPct.textContent = fmt(p_pct, 1) + ' %';
 
       fGram.textContent = fmt(f_g, 1) + ' g';
-      fKcal.textContent = fmt(f_kcal, 0) + ' kcal';
+      fKcal.textContent = num(f_kcal) + ' kcal';
       fPct.textContent = fmt(f_pct, 1) + ' %';
 
       cGram.textContent = fmt(c_g, 1) + ' g';
-      cKcal.textContent = fmt(c_kcal, 0) + ' kcal';
+      cKcal.textContent = num(c_kcal) + ' kcal';
       cPct.textContent = fmt(c_pct, 1) + ' %';
 
-      totalCal.textContent = fmt((p_kcal + f_kcal + c_kcal), 0) + ' kcal';
+      totalCal.textContent = num(p_kcal + f_kcal + c_kcal) + ' kcal';
     }
 
+    // 手動ボタンも残しつつ、自動再計算を追加
     calcBtn.addEventListener('click', calculate);
+    [weight, cal, fatRate, ppk].forEach(el=>{
+      el.addEventListener('input', calculate);
+      el.addEventListener('change', calculate);
+    });
+
     window.addEventListener('load', calculate);
   </script>
 </body>
 </html>
-
-
-
-
